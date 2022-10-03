@@ -1,0 +1,40 @@
+<!--
+ * @Author: Mason 954663633@qq.com
+ * @Date: 2022-07-18 21:59:30
+ * @LastEditors: Mason
+ * @LastEditTime: 2022-07-24 23:47:18
+ * @FilePath: /vue-core/packages/reactivity/dist/index.html
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+
+  <body>
+    <script src="./reactivity.global.js"></script>
+    <div id="app"></div>
+    <script>
+      const { effect, reactive } = VueReactivity;
+
+      // 会对属性进行劫持 proxy、监听用户的获取操作和设置操作
+      const state = reactive({ name: "zf", age: 13, address: { num: 30 } });
+      state.name = "wjw";
+      console.log(state.name);
+
+      const obj = { name: "zf", age: 13, address: { num: 30 } };
+      const state1 = reactive(obj);
+      const state2 = reactive(state1);
+      console.log(state1 === state2);
+
+      effect(() => {
+        app.innerHTML =
+          state.name + "今年" + state.age + "地址" + state.address.num;
+      });
+    </script>
+  </body>
+</html>
