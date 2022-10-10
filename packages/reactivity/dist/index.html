@@ -22,14 +22,14 @@
       const { effect, reactive } = VueReactivity;
 
       // 会对属性进行劫持 proxy、监听用户的获取操作和设置操作
-      const state = reactive({ name: "zf", age: 13, address: { num: 30 } });
-      state.name = "wjw";
-      console.log(state.name);
+      const state = reactive({ name: "zs", age: 13, address: { num: 30 } });
+      // state.name = "wjw";
+      // console.log(state.name);
 
-      const obj = { name: "zf", age: 13, address: { num: 30 } };
-      const state1 = reactive(obj);
-      const state2 = reactive(state1);
-      console.log(state1 === state2);
+      // const obj = { name: "zf", age: 13, address: { num: 30 } };
+      // const state1 = reactive(obj);
+      // const state2 = reactive(state1);
+      // console.log(state1 === state2);
 
       effect(() => {
         app.innerHTML =

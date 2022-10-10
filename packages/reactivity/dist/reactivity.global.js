@@ -30,31 +30,65 @@ var VueReactivity = (() => {
     constructor(fn) {
       this.fn = fn;
       this.active = true;
+      this.parent = null;
       this.deps = [];
-      this.parent = void 0;
     }
     run() {
       if (!this.active) {
         return this.fn();
-      }
-      try {
-        this.parent = activeEffect;
-        activeEffect = this;
-        return this.fn();
-      } finally {
-        activeEffect = this.parent;
-        this.parent = void 0;
+      } else {
+        try {
+          this.parent = activeEffect;
+          activeEffect = this;
+          return this.fn();
+        } finally {
+          activeEffect = void 0;
+          this.parent = null;
+        }
       }
     }
   };
-  function effect(fn, options) {
+  function effect(fn) {
     const _effect = new ReactiveEffect(fn);
     _effect.run();
+  }
+  var targetMap = /* @__PURE__ */ new WeakMap();
+  function track(traget, key) {
+    if (activeEffect) {
+      let depMap = targetMap.get(traget);
+      if (!depMap) {
+        targetMap.set(traget, depMap = /* @__PURE__ */ new Map());
+      }
+      let deps = depMap.get(key);
+      if (!deps) {
+        depMap.set(key, deps = /* @__PURE__ */ new Set());
+      }
+      let shouldTrack = !deps.has(activeEffect);
+      if (shouldTrack) {
+        deps.add(activeEffect);
+        activeEffect.deps.push(deps);
+      }
+    }
+    console.log(activeEffect, targetMap);
   }
 
   // packages/shared/src/index.ts
   var isObject = (value) => {
     return typeof value === "object" && value != null;
+  };
+
+  // packages/reactivity/src/baseHandler.ts
+  var baseHandler = {
+    get(traget, key, receiver) {
+      if (key === "__v_isReactive" /* IS_REACTIVE */) {
+        return true;
+      }
+      track(traget, key);
+      return Reflect.get(traget, key, receiver);
+    },
+    set(traget, key, value, receiver) {
+      return Reflect.set(traget, key, value, receiver);
+    }
   };
 
   // packages/reactivity/src/reactive.ts
@@ -70,20 +104,7 @@ var VueReactivity = (() => {
     if (existing) {
       return existing;
     }
-    const proxy = new Proxy(traget, {
-      get(traget2, key, receiver) {
-        console.log(key);
-        if (key === "__v_isReactive" /* IS_REACTIVE */) {
-          return true;
-        }
-        console.log("\u53EF\u4EE5\u8BB0\u5F55\u8FD9\u4E2A\u5C5E\u6027\u7528\u4E86\u90A3\u4E2A effect");
-        return Reflect.get(traget2, key, receiver);
-      },
-      set(traget2, key, value, receiver) {
-        console.log("\u8FD9\u4E2A\u53EF\u4EE5\u901A\u77E5 effect \u91CD\u65B0\u6267\u884C");
-        return Reflect.set(traget2, key, value, receiver);
-      }
-    });
+    const proxy = new Proxy(traget, baseHandler);
     reactiveMap.set(traget, proxy);
     return proxy;
   }
