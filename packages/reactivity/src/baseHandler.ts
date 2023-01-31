@@ -2,10 +2,10 @@
  * @Author: Mason
  * @Date: 2023-01-20 08:58:08
  * @LastEditors: Mason
- * @LastEditTime: 2023-01-20 09:21:02
+ * @LastEditTime: 2023-01-31 21:53:50
  * @FilePath: /vue-core/packages/reactivity/src/baseHandler.ts
  */
-import { track } from "./effect";
+import { track, trigger } from "./effect";
 // v8的垃圾回收机制 标记删除 引用计数
 export const enum ReactiveFlags {
   IS_REACTIVE = "__v_isReactive", // 标记一个响应式对象
@@ -35,7 +35,7 @@ export const baseHandler = {
     const r = Reflect.set(traget, key, value, receiver);
 
     if (oldValue !== value) {
-      trigger(traget, key, value);
+      trigger(traget, key, value, oldValue);
     }
 
     return r;

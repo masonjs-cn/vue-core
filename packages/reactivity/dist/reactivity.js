@@ -1,14 +1,23 @@
 // packages/reactivity/src/effect.ts
 var activeEffect = void 0;
+function cleanupEffect(effect2) {
+  const { deps } = effect2;
+  for (let i = 0; i < deps.length; i++) {
+    deps[i].delete(effect2);
+  }
+  effect2.deps.length = 0;
+}
 var ReactiveEffect = class {
   constructor(fn) {
     this.fn = fn;
     this.parent = void 0;
+    this.deps = [];
   }
   run() {
     try {
       this.parent = activeEffect;
       activeEffect = this;
+      cleanupEffect(this);
       return this.fn();
     } finally {
       activeEffect = this.parent;
@@ -38,6 +47,18 @@ function track(target, key) {
     }
   }
 }
+function trigger(target, key, newValue, oldValue) {
+  const depsMap = targetMap.get(target);
+  if (!depsMap) {
+    return;
+  }
+  const dep = depsMap.get(key);
+  const effects = [...dep];
+  effects && effects.forEach((effect2) => {
+    if (effect2 !== activeEffect)
+      effect2.run();
+  });
+}
 
 // packages/shared/src/index.ts
 var isObject = (value) => {
@@ -57,7 +78,7 @@ var baseHandler = {
     let oldValue = traget[key];
     const r = Reflect.set(traget, key, value, receiver);
     if (oldValue !== value) {
-      trigger(traget, key, value);
+      trigger(traget, key, value, oldValue);
     }
     return r;
   }

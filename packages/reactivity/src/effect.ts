@@ -1,14 +1,33 @@
+/*
+ * @Author: Mason
+ * @Date: 2023-01-20 08:58:08
+ * @LastEditors: Mason
+ * @LastEditTime: 2023-01-31 21:46:42
+ * @FilePath: /vue-core/packages/reactivity/src/effect.ts
+ */
 export let activeEffect = undefined; // 当前正在执行的effect
+
+function cleanupEffect(effect) {
+  // 在收集的列表中将自己移除掉
+  const { deps } = effect;
+  for (let i = 0; i < deps.length; i++) {
+    // 找到set，让set移除掉自己
+    deps[i].delete(effect);
+  }
+  effect.deps.length = 0; // 清空依赖的列表
+}
 
 export class ReactiveEffect {
   // 默认将 fn 挂载到类的实例上
   constructor(private fn) {}
   parent = undefined;
+  deps = []; // 我依赖了哪些列表
 
   run() {
     try {
       this.parent = activeEffect;
       activeEffect = this;
+      cleanupEffect(this); // 清理了上一次的依赖收集
       return this.fn();
     } finally {
       // 执行完毕后还原activeEffect,取消当前正在运行的activeEffect
@@ -49,19 +68,36 @@ export function track(target, key) {
     let shouldTrack = !dep.has(activeEffect);
     if (shouldTrack) {
       dep.add(activeEffect);
-
       // name = new Set(effect)
       // age = new Set(effect)
-
       // 我可以通过当前的effect 找到这两个集合中的自己。将其移除掉就可以了
       activeEffect.deps.push(dep);
     }
   }
 }
 
-export function trigger(traget, key, newVal) {
-  // 通过对象找到对应的属性 让这个属性对应的 effect 重新执行
-}
-
 // activeEffect = e1
 // e2.parent = e1
+/**
+ * @description: 通过对象找到对应的属性 让这个属性对应的effect重新执行
+ * @param {*} target
+ * @param {*} key
+ * @param {*} newValue
+ * @param {*} oldValue
+ * @return {*}
+ */
+export function trigger(target, key, newValue, oldValue) {
+  const depsMap = targetMap.get(target);
+  if (!depsMap) {
+    return;
+  }
+  const dep = depsMap.get(key); // name 或者 age对应的所有effect
+
+  const effects = [...dep];
+  // 运行的是数组 删除的是set
+  effects &&
+    effects.forEach((effect) => {
+      // 正在执行的effect ，不要多次执行
+      if (effect !== activeEffect) effect.run();
+    });
+}

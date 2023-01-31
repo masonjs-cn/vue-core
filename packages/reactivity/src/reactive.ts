@@ -4,6 +4,11 @@ import { ReactiveFlags, baseHandler } from "./baseHandler";
 
 const reactiveMap = new WeakMap(); // 必须是对象，弱引用
 
+/**
+ * @description: 响应式 reactive
+ * @param {*} traget 目标对象
+ * @return {*}
+ */
 export function reactive(traget) {
   if (!isObject(traget)) {
     return traget;
